@@ -46,7 +46,7 @@ function PaddleSelectState:update(dt)
         gSounds['confirm']:play()
 
         gStateMachine:change('serve', {
-            paddle = Paddle(self.currentPaddle),
+            paddle = Paddle(self.currentPaddle, 2),
             bricks = LevelMaker.createMap(1),
             health = 3,
             score = 0,

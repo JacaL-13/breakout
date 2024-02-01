@@ -22,9 +22,7 @@
     Credit for music (great loop):
     http://freesound.org/people/joshuaempyre/sounds/251461/
     http://www.soundcloud.com/empyreanma
-]]
-
-require 'src/Dependencies'
+]] require 'src/Dependencies'
 
 --[[
     Called just once at the beginning of the game; used to set up
@@ -66,9 +64,10 @@ function love.load()
         ['paddles'] = GenerateQuadsPaddles(gTextures['main']),
         ['balls'] = GenerateQuadsBalls(gTextures['main']),
         ['bricks'] = GenerateQuadsBricks(gTextures['main']),
-        ['hearts'] = GenerateQuads(gTextures['hearts'], 10, 9)
+        ['hearts'] = GenerateQuads(gTextures['hearts'], 10, 9),
+        ['powerups'] = GenerateQuadsPowerups(gTextures['main'])
     }
-    
+
     -- initialize our virtual resolution, which will be rendered within our
     -- actual window no matter its dimensions
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
@@ -97,6 +96,11 @@ function love.load()
         ['music'] = love.audio.newSource('sounds/music.wav', 'static')
     }
 
+    -- Set all sound volumes
+    for k, sound in pairs(gSounds) do
+        sound:setVolume(0.1)
+    end
+
     -- the state machine we'll be using to transition between various states
     -- in our game instead of clumping them together in our update and draw
     -- methods
@@ -109,14 +113,30 @@ function love.load()
     -- 5. 'victory' (the current level is over, with a victory jingle)
     -- 6. 'game-over' (the player has lost; display score and allow restart)
     gStateMachine = StateMachine {
-        ['start'] = function() return StartState() end,
-        ['play'] = function() return PlayState() end,
-        ['serve'] = function() return ServeState() end,
-        ['game-over'] = function() return GameOverState() end,
-        ['victory'] = function() return VictoryState() end,
-        ['high-scores'] = function() return HighScoreState() end,
-        ['enter-high-score'] = function() return EnterHighScoreState() end,
-        ['paddle-select'] = function() return PaddleSelectState() end
+        ['start'] = function()
+            return StartState()
+        end,
+        ['play'] = function()
+            return PlayState()
+        end,
+        ['serve'] = function()
+            return ServeState()
+        end,
+        ['game-over'] = function()
+            return GameOverState()
+        end,
+        ['victory'] = function()
+            return VictoryState()
+        end,
+        ['high-scores'] = function()
+            return HighScoreState()
+        end,
+        ['enter-high-score'] = function()
+            return EnterHighScoreState()
+        end,
+        ['paddle-select'] = function()
+            return PaddleSelectState()
+        end
     }
     gStateMachine:change('start', {
         highScores = loadHighScores()
@@ -195,20 +215,17 @@ function love.draw()
     local backgroundWidth = gTextures['background']:getWidth()
     local backgroundHeight = gTextures['background']:getHeight()
 
-    love.graphics.draw(gTextures['background'], 
-        -- draw at coordinates 0, 0
-        0, 0, 
-        -- no rotation
-        0,
-        -- scale factors on X and Y axis so it fills the screen
-        VIRTUAL_WIDTH / (backgroundWidth - 1), VIRTUAL_HEIGHT / (backgroundHeight - 1))
-    
+    love.graphics.draw(gTextures['background'], -- draw at coordinates 0, 0
+    0, 0, -- no rotation
+    0, -- scale factors on X and Y axis so it fills the screen
+    VIRTUAL_WIDTH / (backgroundWidth - 1), VIRTUAL_HEIGHT / (backgroundHeight - 1))
+
     -- use the state machine to defer rendering to the current state we're in
     gStateMachine:render()
-    
+
     -- display FPS for debugging; simply comment out to remove
     displayFPS()
-    
+
     push:apply('end')
 end
 
@@ -269,7 +286,7 @@ end
 function renderHealth(health)
     -- start of our health rendering
     local healthX = VIRTUAL_WIDTH - 100
-    
+
     -- render health left
     for i = 1, health do
         love.graphics.draw(gTextures['hearts'], gFrames['hearts'][1], healthX, 4)

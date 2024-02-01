@@ -25,6 +25,8 @@ NONE = 4            -- no blocks this row
 
 LevelMaker = Class{}
 
+local lockedBricks = 1
+
 --[[
     Creates a table of Bricks to be returned to the main game, with different
     possible ways of randomizing rows and columns of bricks. Calculates the
@@ -49,9 +51,10 @@ function LevelMaker.createMap(level)
 
     -- lay out bricks such that they touch each other and fill the space
     for y = 1, numRows do
+		
         -- whether we want to enable skipping for this row
         local skipPattern = math.random(1, 2) == 1 and true or false
-
+		
         -- whether we want to enable alternating colors for this row
         local alternatePattern = math.random(1, 2) == 1 and true or false
         
@@ -66,7 +69,7 @@ function LevelMaker.createMap(level)
 
         -- used only when we want to alternate a block, for alternate pattern
         local alternateFlag = math.random(2) == 1 and true or false
-
+		
         -- solid color we'll use if we're not skipping or alternating
         local solidColor = math.random(1, highestColor)
         local solidTier = math.random(0, highestTier)
@@ -117,6 +120,19 @@ function LevelMaker.createMap(level)
             -- Lua's version of the 'continue' statement
             ::continue::
         end
+
+		local lockedBricksTotal = lockedBricks
+		
+		-- change random bricks to lockedBricks
+		while lockedBricks > 0 do
+			local randomBrick = math.random(1, #bricks - (lockedBricksTotal - lockedBricks))
+			bricks[randomBrick].locked = true
+			bricks[randomBrick].tier = 0
+			bricks[randomBrick].color = 1
+			lockedBricks = lockedBricks - 1
+		end
+
+
     end 
 
     -- in the event we didn't generate any bricks, try again

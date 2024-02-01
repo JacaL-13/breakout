@@ -12,9 +12,9 @@
     press Enter, though everything in the actual game now should render in
     preparation for the serve, including our current health and score, as
     well as the level we're on.
-]]
-
-ServeState = Class{__includes = BaseState}
+]] ServeState = Class {
+    __includes = BaseState
+}
 
 function ServeState:enter(params)
     -- grab game state from params
@@ -25,10 +25,14 @@ function ServeState:enter(params)
     self.highScores = params.highScores
     self.level = params.level
     self.recoverPoints = params.recoverPoints
+    self.bricksLeft = params.bricksLeft
+    self.powerupsLeft = params.powerupsLeft
 
     -- init new ball (random color for fun)
     self.ball = Ball()
     self.ball.skin = math.random(7)
+
+	self.key = params.key
 end
 
 function ServeState:update(dt)
@@ -47,7 +51,10 @@ function ServeState:update(dt)
             highScores = self.highScores,
             ball = self.ball,
             level = self.level,
-            recoverPoints = self.recoverPoints
+            recoverPoints = self.recoverPoints,
+			bricksLeft = self.bricksLeft,
+			powerupsLeft = self.powerupsLeft,
+			key = self.key
         })
     end
 
@@ -68,10 +75,8 @@ function ServeState:render()
     renderHealth(self.health)
 
     love.graphics.setFont(gFonts['large'])
-    love.graphics.printf('Level ' .. tostring(self.level), 0, VIRTUAL_HEIGHT / 3,
-        VIRTUAL_WIDTH, 'center')
+    love.graphics.printf('Level ' .. tostring(self.level), 0, VIRTUAL_HEIGHT / 3, VIRTUAL_WIDTH, 'center')
 
     love.graphics.setFont(gFonts['medium'])
-    love.graphics.printf('Press Enter to serve!', 0, VIRTUAL_HEIGHT / 2,
-        VIRTUAL_WIDTH, 'center')
+    love.graphics.printf('Press Enter to serve!', 0, VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH, 'center')
 end

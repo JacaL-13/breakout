@@ -19,7 +19,7 @@ Paddle = Class{}
     Our Paddle will initialize at the same spot every time, in the middle
     of the world horizontally, toward the bottom.
 ]]
-function Paddle:init(skin)
+function Paddle:init(skin, size)
     -- x is placed in the middle
     self.x = VIRTUAL_WIDTH / 2 - 32
 
@@ -29,9 +29,9 @@ function Paddle:init(skin)
     -- start us off with no velocity
     self.dx = 0
 
-    -- starting dimensions
-    self.width = 64
-    self.height = 16
+	-- set paddle dimensions based on size
+	self.width = size * 32
+	self.height = 16
 
     -- the skin only has the effect of changing our color, used to offset us
     -- into the gPaddleSkins table later
@@ -39,7 +39,7 @@ function Paddle:init(skin)
 
     -- the variant is which of the four paddle sizes we currently are; 2
     -- is the starting size, as the smallest is too tough to start with
-    self.size = 2
+    self.size = size
 end
 
 function Paddle:update(dt)
@@ -65,6 +65,19 @@ function Paddle:update(dt)
     else
         self.x = math.min(VIRTUAL_WIDTH - self.width, self.x + self.dx * dt)
     end
+
+end
+
+function Paddle:collides(target)
+	if self.x > target.x + target.width or target.x > self.x + self.width then
+		return false
+	end
+
+	if self.y > target.y + target.height or target.y > self.y + self.height then
+		return false
+	end 
+
+	return true
 end
 
 --[[
