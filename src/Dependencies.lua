@@ -15,6 +15,9 @@ Class = require 'lib/class'
 -- a few global constants, centralized
 require 'src/constants'
 
+-- other global variables
+require 'src/global'
+
 -- the ball that travels around, breaking bricks and triggering lives lost
 require 'src/Ball'
 

@@ -1,0 +1,1 @@
+humanPlayer = true

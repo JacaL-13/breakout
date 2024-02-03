@@ -44,10 +44,6 @@ function PlayState:enter(params)
 
     self.powerups = {}
 
-    self.lockedBricks = 0
-
-	self.key = params.key or false
-
 end
 
 function PlayState:update(dt)
@@ -66,8 +62,17 @@ function PlayState:update(dt)
 
     -- spawn two additional balls at paddle position add them to self.balls and give them random velocities
 
+    -- merge balls and powerups table for ai
+    local ballsnPowerups = {}
+    for k, ball in pairs(self.balls) do
+        table.insert(ballsnPowerups, ball)
+    end
+    for k, powerup in pairs(self.powerups) do
+        table.insert(ballsnPowerups, powerup)
+    end
+
     -- update positions based on velocity
-    self.paddle:update(dt)
+    self.paddle:update(dt, ballsnPowerups)
 
     for k, ball in pairs(self.balls) do
         ball:update(dt)
@@ -89,6 +94,11 @@ function PlayState:update(dt)
                 ball.dx = 50 + (8 * math.abs(self.paddle.x + self.paddle.width / 2 - ball.x))
             end
 
+            -- if ball is really slow speed it up a bit
+            if math.abs(ball.dx) < 150 then
+                ball.dx = ball.dx * 1.02
+            end
+
             gSounds['paddle-hit']:play()
         end
 
@@ -96,6 +106,8 @@ function PlayState:update(dt)
 
             -- only check collision if we're in play
             if brick.inPlay and ball:collides(brick) then
+
+				local lockedBricks = 0
 
                 -- check if score has passed a multiple of growScore and increase paddle size if it has
                 local oldScore = math.floor(self.score / growScore)
@@ -110,7 +122,7 @@ function PlayState:update(dt)
                 end
 
                 -- trigger the brick's hit function, which removes it from play
-                local brickDestroyed = brick:hit(self.key)
+                local brickDestroyed = brick:hit()
 
                 -- if we have enough points, recover a point of health
                 if self.score > self.recoverPoints then
@@ -125,20 +137,31 @@ function PlayState:update(dt)
                 end
 
                 if brickDestroyed then
-                    -- Look through bricks and count locked bricks
+					
+                    local multiBallRoll = math.random(self.bricksLeft)
+					
+                    local keyRoll = math.random(self.bricksLeft)
+					
+                    self.bricksLeft = self.bricksLeft - 1
+					
+                    -- Count locked bricks
+
                     for k, brick in pairs(self.bricks) do
                         if brick.locked then
-                            self.lockedBricks = self.lockedBricks + 1
+                            lockedBricks = lockedBricks + 1
                         end
                     end
+					
+					-- If only locked bricks remain, unlock all bricks
+                    if lockedBricks >= self.bricksLeft then
+                        for k, brick in pairs(self.bricks) do
+                            if brick.locked then
+                                brick.locked = false
+                            end
+                        end
 
-                    print(self.lockedBricks)
-
-                    local multiBallRoll = math.random(self.bricksLeft)
-
-                    local keyRoll = math.random(self.bricksLeft - self.lockedBricks)
-
-                    self.bricksLeft = self.bricksLeft - 1
+                        lockedBricks = 0
+                    end
 
                     -- go to our victory screen if there are no more bricks left
                     -- if self:checkVictory() then
@@ -156,15 +179,14 @@ function PlayState:update(dt)
                         })
                     else
                         if multiBallRoll <= self.powerupsLeft then
-                            local newPowerUp = Powerup(brick.x + brick.width / 2, brick.y, 9)
+                            local newPowerUp = Powerup(brick.x, brick.y, 9)
                             table.insert(self.powerups, newPowerUp)
 
                             self.powerupsLeft = self.powerupsLeft - 1
-
-                            self.nextPowerup = math.random(1, self.bricksLeft)
                         end
-                        if keyRoll <= self.lockedBricks then
-                            local newKey = Powerup(brick.x + brick.width / 2, brick.y, 10)
+
+                        if keyRoll <= self.bricksLeft and lockedBricks > 0 then
+                            local newKey = Powerup(brick.x + brick.width - 16, brick.y, 10)
                             table.insert(self.powerups, newKey)
                         end
                     end
@@ -255,8 +277,7 @@ function PlayState:update(dt)
                 recoverPoints = self.recoverPoints,
                 bricksLeft = self.bricksLeft,
                 powerupsLeft = self.powerupsLeft,
-                paddleSize = self.paddleSize,
-				key = self.key
+                paddleSize = self.paddleSize
             })
         end
     end
@@ -265,34 +286,49 @@ function PlayState:update(dt)
         -- update all powerups
         for k, powerup in pairs(self.powerups) do
             powerup:update(dt)
-        end
 
-        if self.powerup:collides(self.paddle) then
-            if self.powerup.type == 9 then
-                -- spawn two additional balls at paddle position add them to self.balls and give them random velocities
-                local ball1 = Ball(math.random(7))
-                local ball2 = Ball(math.random(7))
+            if powerup:collides(self.paddle) then
+                if powerup.type == 9 then
+                    -- spawn two additional balls at paddle position add them to self.balls and give them random velocities
+                    local ball1 = Ball(math.random(7))
+                    local ball2 = Ball(math.random(7))
 
-                ball1.x = self.paddle.x + (self.paddle.width / 2) - 4
-                ball1.y = self.paddle.y - 8
-                ball1.dx = math.random(-200, 200)
-                ball1.dy = math.random(-50, -60)
+                    ball1.x = self.paddle.x + (self.paddle.width / 2) - 4
+                    ball1.y = self.paddle.y - 8
+                    ball1.dx = math.random(-200, 200)
+                    ball1.dy = math.random(-50, -60)
 
-                ball2.x = self.paddle.x + (self.paddle.width / 2) - 4
-                ball2.y = self.paddle.y - 8
-                ball2.dx = math.random(-200, 200)
-                ball2.dy = math.random(-50, -60)
+                    ball2.x = self.paddle.x + (self.paddle.width / 2) - 4
+                    ball2.y = self.paddle.y - 8
+                    ball2.dx = math.random(-200, 200)
+                    ball2.dy = math.random(-50, -60)
 
-                table.insert(self.balls, ball1)
-                table.insert(self.balls, ball2)
-            elseif self.powerup.type == 10 then
-                self.key = true
+                    table.insert(self.balls, ball1)
+                    table.insert(self.balls, ball2)
+
+					--play powerup sound
+					gSounds['powerup']:play()
+
+                elseif powerup.type == 10 then
+                    -- loop through bricks and unlock last locked brick
+                    local lockedBricks = {}
+                    for k, brick in pairs(self.bricks) do
+                        if brick.locked then
+                            brick.locked = false
+                        end
+                    end
+
+					--play unlock sounds
+					gSounds['unlock']:play()
+					gSounds['unlock2']:play()
+                end
+
+                table.remove(self.powerups, k)
+            elseif powerup.y >= VIRTUAL_HEIGHT then
+                table.remove(self.powerups, k)
             end
-
-            self.powerup = nil
-        elseif self.powerup.y >= VIRTUAL_HEIGHT then
-            self.powerup = nil
         end
+
     end
 
     -- for rendering particle systems
@@ -322,8 +358,8 @@ function PlayState:render()
         ball:render()
     end
 
-    if self.powerup ~= nil then
-        self.powerup:render()
+    for k, powerup in pairs(self.powerups) do
+        powerup:render()
     end
 
     renderScore(self.score)

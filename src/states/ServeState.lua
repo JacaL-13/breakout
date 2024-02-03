@@ -32,7 +32,7 @@ function ServeState:enter(params)
     self.ball = Ball()
     self.ball.skin = math.random(7)
 
-	self.key = params.key
+    self.timer = humanPlayer and math.huge or 1
 end
 
 function ServeState:update(dt)
@@ -41,7 +41,13 @@ function ServeState:update(dt)
     self.ball.x = self.paddle.x + (self.paddle.width / 2) - 4
     self.ball.y = self.paddle.y - 8
 
-    if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') then
+    -- if humanplayer is true, wait for enter else proceed automatically
+
+    if not humanPlayer then
+        self.timer = self.timer - dt
+    end
+
+    if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') or self.timer <= 0 then
         -- pass in all important state info to the PlayState
         gStateMachine:change('play', {
             paddle = self.paddle,
@@ -52,9 +58,8 @@ function ServeState:update(dt)
             ball = self.ball,
             level = self.level,
             recoverPoints = self.recoverPoints,
-			bricksLeft = self.bricksLeft,
-			powerupsLeft = self.powerupsLeft,
-			key = self.key
+            bricksLeft = self.bricksLeft,
+            powerupsLeft = self.powerupsLeft
         })
     end
 

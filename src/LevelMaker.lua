@@ -10,28 +10,31 @@
     Creates randomized levels for our Breakout game. Returns a table of
     bricks that the game can render, based on the current level we're at
     in the game.
-]]
-
--- global patterns (used to make the entire map a certain shape)
+]] -- global patterns (used to make the entire map a certain shape)
 NONE = 1
 SINGLE_PYRAMID = 2
 MULTI_PYRAMID = 3
 
 -- per-row patterns
-SOLID = 1           -- all colors the same in this row
-ALTERNATE = 2       -- alternate colors
-SKIP = 3            -- skip every other block
-NONE = 4            -- no blocks this row
+SOLID = 1 -- all colors the same in this row
+ALTERNATE = 2 -- alternate colors
+SKIP = 3 -- skip every other block
+NONE = 4 -- no blocks this row
 
-LevelMaker = Class{}
+LevelMaker = Class {}
 
-local lockedBricks = 1
+-- More bricks will be locked as the level increases
+local minLockedPerLevel = 1
+local maxLockedPerLevel = 2
+
+-- Prevent the number of locked bricks from exceeding 50% of the total bricks
+local maxLockedBricksPercentage = 0.5
 
 --[[
-    Creates a table of Bricks to be returned to the main game, with different
+	Creates a table of Bricks to be returned to the main game, with different
     possible ways of randomizing rows and columns of bricks. Calculates the
     brick colors and tiers to choose based on the level passed in.
-]]
+	]]
 function LevelMaker.createMap(level)
     local bricks = {}
 
@@ -51,25 +54,25 @@ function LevelMaker.createMap(level)
 
     -- lay out bricks such that they touch each other and fill the space
     for y = 1, numRows do
-		
+
         -- whether we want to enable skipping for this row
         local skipPattern = math.random(1, 2) == 1 and true or false
-		
+
         -- whether we want to enable alternating colors for this row
         local alternatePattern = math.random(1, 2) == 1 and true or false
-        
+
         -- choose two colors to alternate between
         local alternateColor1 = math.random(1, highestColor)
         local alternateColor2 = math.random(1, highestColor)
         local alternateTier1 = math.random(0, highestTier)
         local alternateTier2 = math.random(0, highestTier)
-        
+
         -- used only when we want to skip a block, for skip pattern
         local skipFlag = math.random(2) == 1 and true or false
 
         -- used only when we want to alternate a block, for alternate pattern
         local alternateFlag = math.random(2) == 1 and true or false
-		
+
         -- solid color we'll use if we're not skipping or alternating
         local solidColor = math.random(1, highestColor)
         local solidTier = math.random(0, highestTier)
@@ -87,15 +90,13 @@ function LevelMaker.createMap(level)
                 skipFlag = not skipFlag
             end
 
-            b = Brick(
-                -- x-coordinate
-                (x-1)                   -- decrement x by 1 because tables are 1-indexed, coords are 0
-                * 32                    -- multiply by 32, the brick width
-                + 8                     -- the screen should have 8 pixels of padding; we can fit 13 cols + 16 pixels total
-                + (13 - numCols) * 16,  -- left-side padding for when there are fewer than 13 columns
-                
-                -- y-coordinate
-                y * 16                  -- just use y * 16, since we need top padding anyway
+            b = Brick( -- x-coordinate
+            (x - 1) -- decrement x by 1 because tables are 1-indexed, coords are 0
+            * 32 -- multiply by 32, the brick width
+            + 8 -- the screen should have 8 pixels of padding; we can fit 13 cols + 16 pixels total
+            + (13 - numCols) * 16, -- left-side padding for when there are fewer than 13 columns
+            -- y-coordinate
+            y * 16 -- just use y * 16, since we need top padding anyway
             )
 
             -- if we're alternating, figure out which color/tier we're on
@@ -113,7 +114,7 @@ function LevelMaker.createMap(level)
             if not alternatePattern then
                 b.color = solidColor
                 b.tier = solidTier
-            end 
+            end
 
             table.insert(bricks, b)
 
@@ -121,19 +122,26 @@ function LevelMaker.createMap(level)
             ::continue::
         end
 
-		local lockedBricksTotal = lockedBricks
-		
-		-- change random bricks to lockedBricks
-		while lockedBricks > 0 do
-			local randomBrick = math.random(1, #bricks - (lockedBricksTotal - lockedBricks))
-			bricks[randomBrick].locked = true
-			bricks[randomBrick].tier = 0
-			bricks[randomBrick].color = 1
-			lockedBricks = lockedBricks - 1
-		end
+    end
 
+    -- number of locked bricks in the level
+    local lockedBricks = math.min(math.random(level * minLockedPerLevel, level * maxLockedPerLevel),
+        #bricks * maxLockedBricksPercentage)
 
-    end 
+    -- lock random bricks
+    for i = 1, lockedBricks, 1 do
+        local randomBrick = math.random(#bricks + 1 - i)
+        bricks[randomBrick].locked = true
+    end
+
+    -- loop through bricks and if any are flanked by locked then lock it to prevent softlock
+    for i = 2, #bricks - 1, 1 do
+        if not bricks[i].locked then
+            if bricks[i - 1].locked and bricks[i + 1].locked then
+                bricks[i].locked = true
+            end
+        end
+    end
 
     -- in the event we didn't generate any bricks, try again
     if #bricks == 0 then

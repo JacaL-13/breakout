@@ -85,10 +85,10 @@ end
     Triggers a hit on the brick, taking it out of play if at 0 health or
     changing its color otherwise.
 ]]
-function Brick:hit(key)
-    if self.locked and not key then
-		gSounds['wall-hit']:play()
-		return false
+function Brick:hit()
+    if self.locked then
+        gSounds['wall-hit']:play()
+        return false
     else
         -- set the particle system to interpolate between two colors; in this case, we give
         -- it our self.color but with varying alpha; brighter for higher tiers, fading to 0
@@ -126,8 +126,8 @@ function Brick:hit(key)
             gSounds['brick-hit-1']:play()
 
             return true
-		else
-			return false
+        else
+            return false
         end
     end
 end
@@ -138,10 +138,14 @@ end
 
 function Brick:render()
     if self.inPlay then
-        love.graphics.draw(gTextures['main'],
-            -- multiply color by 4 (-1) to get our color offset, then add tier to that
-            -- to draw the correct tier and color brick onto the screen
-            gFrames['bricks'][1 + ((self.color - 1) * 4) + self.tier], self.x, self.y)
+        if self.locked then
+            love.graphics.draw(gTextures['main'], gFrames['bricks'][24], self.x, self.y)
+        else
+            love.graphics.draw(gTextures['main'],
+                -- multiply color by 4 (-1) to get our color offset, then add tier to that
+                -- to draw the correct tier and color brick onto the screen
+                gFrames['bricks'][1 + ((self.color - 1) * 4) + self.tier], self.x, self.y)
+        end
     end
 end
 

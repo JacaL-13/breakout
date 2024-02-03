@@ -92,6 +92,9 @@ function love.load()
         ['recover'] = love.audio.newSource('sounds/recover.wav', 'static'),
         ['high-score'] = love.audio.newSource('sounds/high_score.wav', 'static'),
         ['pause'] = love.audio.newSource('sounds/pause.wav', 'static'),
+		['powerup'] = love.audio.newSource('sounds/powerup.wav', 'static'),
+		['unlock'] = love.audio.newSource('sounds/unlock.wav', 'static'),
+		['unlock2'] = love.audio.newSource('sounds/unlock2.wav', 'static'),
 
         ['music'] = love.audio.newSource('sounds/music.wav', 'static')
     }
