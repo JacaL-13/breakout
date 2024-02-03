@@ -310,7 +310,7 @@ function PlayState:update(dt)
 					gSounds['powerup']:play()
 
                 elseif powerup.type == 10 then
-                    -- loop through bricks and unlock last locked brick
+                    -- unlock all locked bricks
                     local lockedBricks = {}
                     for k, brick in pairs(self.bricks) do
                         if brick.locked then
